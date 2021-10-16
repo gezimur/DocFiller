@@ -1,19 +1,7 @@
-TEMPLATE = app
-CONFIG += console c++11
-CONFIG -= app_bundle
-CONFIG -= qt
+TEMPLATE = subdirs
 
-INCLUDEPATH += $$PWD/../DuckX/include \
-               $$PWD/../DuckX/thirdparty \
-               $$PWD/../DuckX/thirdparty/pugixml \
-               $$PWD/../DuckX/thirdparty/zip
+SUBDIRS += DocFiller_lib \
+           DocFiller_test_app
 
-LIBS += -L$$PWD/../DuckX/lib/
-
-LIBS += -lDuckX_lib
-
-SOURCES += \
-        $$PWD/src/main.cpp
-
-DESTDIR += $$PWD/bin
-TARGET = DocFiller
+DocFiller_lib.file = DocFiller_lib.pro
+DocFiller_test_app.file = DocFiller_test_app.pro
