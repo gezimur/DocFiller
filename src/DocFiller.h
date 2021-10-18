@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <mutex>
 
 #include <duckx.hpp>
 
@@ -25,9 +26,13 @@ public:
 private:
     duckx::Document makeNewDoc(const std::string& strName);
 
+    void fillParagraphs(duckx::Paragraph& rSrc, duckx::Paragraph& rDst, const std::map<std::string, std::string>& mArgs);
+
     duckx::Run procRun(duckx::Run& rRun, const std::map<std::string, std::string>& mArgs);
 
     std::string procRunText(duckx::Run& rRun, const std::map<std::string, std::string>& mArgs);
+
+    std::mutex m_Mutex;
 
     duckx::Document m_Doc;
     std::vector<char> m_vHeader;

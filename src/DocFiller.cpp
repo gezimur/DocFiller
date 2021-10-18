@@ -21,7 +21,7 @@ bool write_file(const std::string& strFileName, const std::vector<char>& vData)
 
 DocFiller::DocFiller(const std::string& strPath)
     : m_Doc(strPath),
-      m_vHeader(read_file("EmptyDoc\\EmptyDoc.docx"))
+      m_vHeader(read_file("..\\resources\\doc\\EmptyDoc.docx"))
 {
     m_Doc.open();
 }
@@ -62,73 +62,31 @@ void DocFiller::saveFilledDoc(const std::string& strDstName, const std::map<std:
 {
     auto DstDoc = makeNewDoc(strDstName);
 
-    {
-        auto& DstParagraph = DstDoc.paragraphs();
+    fillParagraphs(m_Doc.paragraphs(), DstDoc.paragraphs(), mArgs);
 
-        for (auto Paragraph = m_Doc.paragraphs(); Paragraph.has_next(); Paragraph.next())
-            DstParagraph.insert_paragraph_after("");
+//    auto& DstTables = DstDoc.tables();
 
-        for (auto Paragraph = m_Doc.paragraphs(); Paragraph.has_next(); Paragraph.next())
-        {
-            auto Run = Paragraph.runs();
+//    for (auto Table = m_Doc.tables(); Table.has_next(); Table.next())
+//    {
+//        auto& DstTable = DstTables.append(Table.get_style());
 
-            auto Style = Paragraph.get_style();
-            DstParagraph.set_style(Style);
+//        auto& DstRows = DstTable.rows();
+//        for (auto Row = Table.rows(); Row.has_next(); Row.next())
+//        {
+//            auto& DstRow = DstRows.append(Row.get_style());
+//            auto& DstCells = DstRow.cells();
+//            for (auto Cell = Row.cells(); Cell.has_next(); Cell.next())
+//            {
+//                auto& DstCell = DstCells.append(Cell.get_style());
 
-            while (Run.has_next())
-            {
-                auto strText = procRunText(Run, mArgs);
-
-                auto NewRun = DstParagraph.add_run(strText);
-
-                NewRun.set_style(Run.get_style());
-
-                Run.next();
-            }
-
-            DstParagraph.next();
-        }
-    }
-
-    auto& DstTable = DstDoc.tables();
-
-    for (auto Table = m_Doc.tables(); Table.has_next(); Table.next())
-    {
-        auto DstRow = DstTable.rows();
-        for (auto Row = Table.rows(); Row.has_next(); Row.next())
-        {
-            auto DstCell = DstRow.cells();
-            for (auto Cell = Row.cells(); Cell.has_next(); Cell.next())
-            {
-                auto& DstParagraph = DstCell.paragraphs();
-                for (auto Paragraph = Cell.paragraphs(); Cell.has_next(); Cell.next())
-                {
-                    auto Run = Paragraph.runs();
-
-                    auto Style = Paragraph.get_style();
-                    DstParagraph.set_style(Style);
-
-                    while (Run.has_next())
-                    {
-                        auto strText = procRunText(Run, mArgs);
-
-                        auto NewRun = DstParagraph.add_run(strText);
-
-                        NewRun.set_style(Run.get_style());
-
-                        Run.next();
-                    }
-
-                    DstParagraph.next();
-                }
-                DstCell.next();
-            }
-            DstRow.next();
-        }
-        DstTable.next();
-    }
+//                fillParagraphs(Cell.paragraphs(), DstCell.paragraphs(), mArgs);
+//            }
+//        }
+//    }
 
     DstDoc.set_style(m_Doc.get_style());
+
+    std::lock_guard<std::mutex> Locker(m_Mutex);
 
     DstDoc.save();
 
@@ -143,6 +101,34 @@ duckx::Document DocFiller::makeNewDoc(const std::string& strName)
     NewDoc.open();
 
     return NewDoc;
+}
+
+void DocFiller::fillParagraphs(duckx::Paragraph& rSrc, duckx::Paragraph& rDst, const std::map<std::string, std::string>& mArgs)
+{
+    for (auto Paragraph = rSrc; Paragraph.has_next(); Paragraph.next())
+        rDst.append("", Paragraph.get_style());
+
+    for (auto Paragraph = rSrc; Paragraph.has_next(); Paragraph.next())
+    {
+        auto Run = Paragraph.runs();
+
+        auto Style = Paragraph.get_style();
+        rDst.set_style(Style);
+//        auto& DstP = rDst.append("", Paragraph.get_style());
+
+        while (Run.has_next())
+        {
+            auto strText = procRunText(Run, mArgs);
+
+            auto NewRun = rDst.add_run(strText);
+
+            NewRun.set_style(Run.get_style());
+
+            Run.next();
+        }
+
+        rDst.next();
+    }
 }
 
 duckx::Run DocFiller::procRun(duckx::Run& rRun, const std::map<std::string, std::string>& mArgs)
